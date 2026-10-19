@@ -46,10 +46,11 @@ RPS в режиме повышенной нагрузки - 5000 чтение п
 | Service Notify                         | +         | потребляет события из кафки и формирует отправку уведомления через smpt сервер                                                                                                 |
 | Service PersonalEng                    | +         | принимает запрос на проверку пользовалеля, формирует gwt токен сесии, пишет в редис данные по сессии, создание новых пользователей                                             |
 | Service ShareEng                       | +         | принимает запросы фиксацию разрешений пользователя на папки, прав на файлы, формирование ссылок на поделиться с учетом прав, отправляет в редис                                |
+| Thumbnail                              |           | получает события от minlO и сжимает файлы для превью                                                                                                                           |
 | DB Service FileEng (Metadata) Postgres |           | хранит метаданные ссылки на файлы в хранилище, пересчитывает индексы силами самой СУБД                                                                                         |
-| DB Service PersonalEng Postgres        |           | хранит данные пользователя и состояние, информацию о доступах                                                                                                                  |
-| Storage MinlO                          |           | записывает, хранит object по файлам загрузки,                                                                                                                                  |
-| Кэш Redis                              |           | хранит ссылки, данные о сессии пользователя и актуальных правах                                                                                                                |
+| DB Service PersonalEng Postgres        |           | хранит данные пользователя и состояние , статусах                                                                                                                              |
+| Storage MinlO                          |           | записывает, хранит object по файлам загрузки, генерация временных ссылок на скачивание                                                                                         |
+| DB Redis                               |           | хранит ссылки, кэш данные о сессии пользователя и актуальных правах                                                                                                            |
 | SDN                                    |           | хранит кэш с файлами                                                                                                                                                           |
 | Kafka                                  |           | принимает события изменений по файлам, уведомления                                                                                                                             |
 
@@ -58,21 +59,64 @@ RPS в режиме повышенной нагрузки - 5000 чтение п
 
 _3–5 ключевых сценариев со схемами._
 1. Загрузка файла
+   <br/>1 проверка прав и сессии
+   <br/>2 запить первых данных в БД
+   <br/>3 генерация ссылки на загрузку и отправка в браузер
+   <br/>4 генерация превью сервисом Thumbnail
+   <br/>5 уведомление о завершении и отправка полных метаданных в БД
 ```mermaid
-flowchart LR
-    Client Web -->|HTTPS| API[API GW]
-    API --> Svc[FileEng]
-    Svc --> EventBus[Kafka]
-    EventBus --> Svc2[Notify]
-    Svc --> DB[(PostgreSQL)]
-    DB --> Storage[(MinlO)]
-    Storage --> CDN[CDN]
+flowchart TD
+ Client_Web -->|HTTPS| API[API GW]
+    API --> FileEng[FileEng]
+    FileEng --> |1 grpc| PersonEng[PersonEng]
+    PersonEng --> DB2[(Redis)]
+    PersonEng --> FileEng
+    FileEng --> |2| DB[(PostgreSQL)]
+    DB --> FileEng
+    FileEng --> |3| Storage@{ shape: lin-cyl, label: "MinlO" }
+    Storage --> FileEng
+    FileEng --> API
+    API --> |3| Client_Web
+    Client_Web --> |asinc| Storage
+    Storage --> |asinc| EventBus[Kafka]
+    EventBus --> |4| Thumbnail[Thumbnail]
+    EventBus --> |5| Notify[Notify]
+    Thumbnail --> Storage
+    EventBus --> |5| FileEng
+    Storage --> CDN@{ shape: das, label: "CDN" }
+  
 ```
-2. Скачать файл
+2. Скачать файл (при условии что сессия активна)
+   <br/>1 запросить права на скачку по пользователю
+   <br/>2 проверить в БД есть ли файл
+   <br/>3 получить ссылку на скачивание по идентификатору из бд сформировать ссылку и отдать клиенту
+   <br/>4 отправить уведомление о завершении скачивания
+```mermaid
+   flowchart TD
+   Client_Web -->|HTTPS| API[API GW]
+   API --> FileEng[FileEng]
+   FileEng --> |1 grpc| ShareEng[ShareEng]
+   ShareEng[ShareEng] --> DB2[(Redis)]
+   DB2[(Redis)] --> ShareEng
+   ShareEng --> FileEng
+   FileEng --> |2| DB[(PostgreSQL)]
+   DB --> FileEng
+   FileEng --> |3| Storage@{ shape: lin-cyl, label: "MinlO" }
+   Storage --> FileEng
+   FileEng --> API
+   API --> |3| Client_Web
+   Client_Web --> |asinc| Storage
+   FileEng --> |asinc 3| EventBus[Kafka]
+   EventBus --> |4| Notify[Notify]
+   Storage --> CDN@{ shape: das, label: "CDN" }
+```
 
-3. Прокомментировать файл
+3. Поделиться ссылкой на файл с правами на редактирование (админ)
+<br/>1 запросить права на файл по пользователю
+<br/>2 сформировать ссылку на файл в ShareEng положить в БД
+<br/>
 
-4. Поделиться ссылкой на файл
+
 
 
 ## 3. Проблемы и решения
