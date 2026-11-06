@@ -36,7 +36,7 @@ _REST / gRPC / GraphQL / events — где и почему._
 
 ## 3. Схема взаимодействия
 
-![Схема приложения](diagrams/Sch2hm.png)
+![Схема приложения](diagrams/sch2hmV2.png)
 
 _PNG/PlantUML с указанием протоколов (в diagrams/)._
 
@@ -44,7 +44,7 @@ _PNG/PlantUML с указанием протоколов (в diagrams/)._
 
 _3–4 ключевых API (Swagger/OpenAPI или описание)._
 /createCard
-/searchCards/?=filters...
+/searchCards/?=filters..
 /createOrder
 /updateOrder/id=123
 
