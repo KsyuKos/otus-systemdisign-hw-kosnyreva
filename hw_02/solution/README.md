@@ -36,7 +36,7 @@ _REST / gRPC / GraphQL / events — где и почему._
 
 ## 3. Схема взаимодействия
 
-![Схема приложения](diagrams/sch2hmV2.png)
+![Схема приложения](diagrams/sch2hmV3.png)
 
 _PNG/PlantUML с указанием протоколов (в diagrams/)._
 
