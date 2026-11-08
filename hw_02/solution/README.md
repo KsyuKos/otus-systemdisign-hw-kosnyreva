@@ -38,6 +38,18 @@ _REST / gRPC / GraphQL / events — где и почему._
 
 ![Схема приложения](diagrams/sch2hmV3.png)
 
+```plantuml
+@startuml
+Client->API_GW : Создать
+return ok
+API_GW->Auth_LogOn: Auth
+Auth_LogOn->DB_Profile: user check
+return ok
+Auth_LogOn->API_GW:gwt
+API_GW->Client
+@enduml
+```
+
 _PNG/PlantUML с указанием протоколов (в diagrams/)._
 
 ## 4. API-контракты
