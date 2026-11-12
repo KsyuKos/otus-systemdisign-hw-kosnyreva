@@ -58,7 +58,8 @@ _PNG/PlantUML с указанием протоколов (в diagrams/)._
 
 _3–4 ключевых API (Swagger/OpenAPI или описание)._
 
-![API_endpoints](diagrams/index.html)
+![Скрин методов](diagrams/API_methods.png)
+![API_endpoints_full](diagrams/index.html) - полная версия с содержимым методов
 
 ## 5. Асинхронность
 
